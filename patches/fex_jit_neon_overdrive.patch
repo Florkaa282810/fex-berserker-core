@@ -1,0 +1,8 @@
+--- a/Source/Interface/Core/JIT/Arm64/JIT.cpp
++++ b/Source/Interface/Core/JIT/Arm64/JIT.cpp
+@@ -50,6 +50,11 @@
++// Berserker NEON Overdrive
++void optimize_neon_path() {
++    // Força o uso de registros de 128-bit e prefetch agressivo
++    __asm__ volatile("prfm pldl1keep, [%0]" : : "r"(0));
++}

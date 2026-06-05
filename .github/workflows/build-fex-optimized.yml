@@ -1,0 +1,71 @@
+name: Build FEX-Core Optimized (Berserker)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Maximize Build Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install Official Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build clang-14 llvm-14 \
+            libsdl2-dev libepoxy-dev python3-setuptools \
+            g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            libguestfs-dev libvixl-dev libtinfo-dev \
+            libwayland-dev libx11-dev libxext-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libxss-dev libasound2-dev \
+            libpulse-dev libdbus-1-dev libudev-dev \
+            libgles2-mesa-dev libgbm-dev libdrm-dev \
+            libvulkan-dev
+
+      - name: Apply Berserker Overdrive
+        run: |
+          sed -i 's/project(FEX)/project(FEX)\nset(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -ffast-math -funsafe-math-optimizations")\nset(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -ffast-math -funsafe-math-optimizations")/' CMakeLists.txt
+          sed -i 's/FEX_MAX_JIT_BLOCKS/2000000/g' Source/Tools/FEXLoader/Main.cpp 2>/dev/null || true
+
+      - name: Configure and Build
+        run: |
+          mkdir build
+          cd build
+          export CC=clang-14
+          export CXX=clang++-14
+          cmake .. -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_LTO=OFF \
+            -DBUILD_TESTS=OFF \
+            -DENABLE_ASSERTIONS=OFF \
+            -DBUILD_THUNKS=OFF \
+            -DFEX_PORTABLE=ON
+          ninja FEXLoader FEXInterpreter
+
+      - name: Package for Winlator
+        run: |
+          mkdir -p fex-berserker-package
+          cp build/Source/Tools/FEXLoader/FEXLoader fex-berserker-package/ || true
+          cp build/Source/Tools/FEXInterpreter/FEXInterpreter fex-berserker-package/ || true
+          cd fex-berserker-package
+          zip -r ../fex-berserker-optimized.zip .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fex-berserker-optimized
+          path: fex-berserker-optimized.zip

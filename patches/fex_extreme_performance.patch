@@ -1,0 +1,14 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -10,6 +10,14 @@
++set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -ffast-math -funsafe-math-optimizations -fno-trapping-math -fno-math-errno -falign-functions=64 -finline-functions -finline-limit=100000 -funroll-loops -fomit-frame-pointer")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -ffast-math -funsafe-math-optimizations -fno-trapping-math -fno-math-errno -falign-functions=64 -finline-functions -finline-limit=100000 -funroll-loops -fomit-frame-pointer")
++set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-O3 -Wl,--as-needed -Wl,--sort-common -s")
++
+--- a/Source/Tools/FEXLoader/Main.cpp
++++ b/Source/Tools/FEXLoader/Main.cpp
+@@ -100,6 +100,10 @@
++extern "C" void set_berserker_env() {
++    setenv("FEX_MAX_JIT_BLOCKS", "2000000", 1);
++    setenv("FEX_AGGRESSIVE_INLINING", "1", 1);
++}
